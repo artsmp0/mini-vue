@@ -1,3 +1,9 @@
-import { helloMiniVue } from "mini-vue";
+import { createApp } from "mini-vue";
 
-helloMiniVue();
+const app = createApp({
+  render() {
+    return "hello mini vue is only createApp";
+  },
+});
+
+app.mount("#app");
