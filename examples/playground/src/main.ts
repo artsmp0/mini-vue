@@ -1,19 +1,24 @@
-import { createApp, h } from "mini-vue";
+import { createApp, h, reactive } from "mini-vue";
 
 const app = createApp({
-  render() {
-    return h("div", {}, [
-      h("p", { style: "color: red; font-weight: bold;" }, ["Hello World"]),
-      h(
-        "button",
-        {
-          onClick() {
-            alert("Hello patchEvent!");
+  setup() {
+    const state = reactive({ count: 0 });
+    const increment = () => {
+      state.count++;
+    };
+    return () =>
+      h("div", {}, [
+        h("p", { style: "color: red; font-weight: bold;" }, [
+          `count: ${state.count}`,
+        ]),
+        h(
+          "button",
+          {
+            onClick: increment,
           },
-        },
-        ["click me"]
-      ),
-    ]);
+          ["increment"]
+        ),
+      ]);
   },
 });
 console.log("app: ", app);

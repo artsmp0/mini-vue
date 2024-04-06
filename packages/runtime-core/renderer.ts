@@ -33,8 +33,8 @@ export function createRenderer(options: RendererOptions) {
 
   const renderVNode = (vnode: VNode | string) => {
     if (typeof vnode === "string") return hostCreateText(vnode);
-    const el = hostCreateElement(vnode.type);
 
+    const el = hostCreateElement(vnode.type);
     Object.entries(vnode.props).forEach(([key, value]) => {
       hostPatchProp(el, key, value);
     });
@@ -47,6 +47,7 @@ export function createRenderer(options: RendererOptions) {
   };
 
   const render: RootRenderFunction = (vnode, container) => {
+    while (container.firstChild) container.removeChild(container.firstChild);
     const el = renderVNode(vnode);
     hostInsert(el, container);
   };
