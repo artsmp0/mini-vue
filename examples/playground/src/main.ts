@@ -1,26 +1,54 @@
 import { createApp, h, reactive } from "mini-vue";
 
-const app = createApp({
+const CounterComponent = {
   setup() {
     const state = reactive({ count: 0 });
-    const increment = () => {
-      state.count++;
-    };
+    const increment = () => state.count++;
+
     return () =>
       h("div", {}, [
-        h("p", { style: "color: red; font-weight: bold;" }, [
-          `count: ${state.count}`,
+        h("p", {}, [`count: ${state.count}`]),
+        h("button", { onClick: increment }, ["increment"]),
+      ]);
+  },
+};
+
+const MyComponent = {
+  props: { someMessage: { type: String } },
+
+  setup(props: { someMessage: string }, { emit }: any) {
+    return () =>
+      h("div", { id: "my-app" }, [
+        h("p", {}, [`message: ${props.someMessage}`]),
+        h("button", { onClick: () => emit("click:change-message") }, [
+          "change message in internal component",
         ]),
+      ]);
+  },
+};
+
+const app = createApp({
+  setup() {
+    const state = reactive({ message: "hello" });
+    const changeMessage = () => {
+      state.message += "!";
+    };
+    return () =>
+      h("div", { id: "my-app" }, [
+        h(CounterComponent, {}, []),
         h(
-          "button",
+          MyComponent,
           {
-            onClick: increment,
+            "some-message": state.message,
+            "onClick:change-message": changeMessage,
           },
-          ["increment"]
+          []
         ),
+        h("button", { onClick: changeMessage }, ["change message in outer"]),
+        // h(CounterComponent, {}, []),
+        // h(CounterComponent, {}, []),
       ]);
   },
 });
-console.log("app: ", app);
 
 app.mount("#app");

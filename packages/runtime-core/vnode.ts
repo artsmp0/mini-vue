@@ -1,12 +1,14 @@
+import { ComponentInternalInstance } from "./component";
 import { RendererNode } from "./renderer";
 
 export const Text = Symbol();
-export type VnodeTypes = string | typeof Text;
+export type VnodeTypes = string | typeof Text | object;
 export interface VNode<HostNode = RendererNode> {
   type: VnodeTypes;
   props: VnodeProps | null;
   children: unknown;
   el?: HostNode;
+  component?: ComponentInternalInstance | null;
 }
 export interface VnodeProps {
   [key: string]: any;

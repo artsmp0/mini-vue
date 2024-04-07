@@ -1,6 +1,12 @@
 import { ReactiveEffect } from "../reactivity/effect";
-import { Component } from "./component";
-import { Text, VNode, normalizeVNode } from "./vnode";
+import {
+  Component,
+  ComponentInternalInstance,
+  InternalRenderFunction,
+  createComponentInstance,
+} from "./component";
+import { initProps, updateProps } from "./componentProps";
+import { Text, VNode, createVNode, normalizeVNode } from "./vnode";
 
 export interface RendererOptions<
   HostNode = RendererNode,
@@ -11,6 +17,7 @@ export interface RendererOptions<
   insert(child: HostNode, parent: HostNode, anchor?: HostNode | null): void;
   setText(node: HostNode, text: string): void;
   patchProp(el: HostElement, key: string, value: any): void;
+  parentNode(node: HostNode): HostNode | null;
 }
 
 export interface RendererNode {
@@ -31,15 +38,90 @@ export function createRenderer(options: RendererOptions) {
     setText: hostSetText,
     insert: hostInsert,
     patchProp: hostPatchProp,
+    parentNode: hostParentNode,
   } = options;
 
   const patch = (n1: VNode | null, n2: VNode, container: RendererElement) => {
     const { type } = n2;
     if (type === Text) {
       processText(n1, n2, container);
-    } else {
+    } else if (typeof type === "string") {
       processElement(n1, n2, container);
+    } else if (typeof type === "object") {
+      processComponent(n1, n2, container);
     }
+  };
+
+  const processComponent = (
+    n1: VNode | null,
+    n2: VNode,
+    container: RendererElement
+  ) => {
+    if (n1 === null) {
+      mountComponent(n2, container);
+    } else {
+      updateComponent(n1, n2);
+    }
+  };
+
+  const mountComponent = (initialVNode: VNode, container: RendererElement) => {
+    const instance = (initialVNode.component =
+      createComponentInstance(initialVNode));
+
+    const { props } = instance.vnode;
+    initProps(instance, props);
+
+    const component = initialVNode.type as Component;
+    if (component.setup) {
+      instance.render = component.setup(instance.props, {
+        emit: instance.emit,
+      }) as InternalRenderFunction;
+    }
+
+    setupRenderEffect(instance, initialVNode, container);
+  };
+
+  const setupRenderEffect = (
+    instance: ComponentInternalInstance,
+    initialVNode: VNode,
+    container: RendererElement
+  ) => {
+    const componentUpdateFn = () => {
+      const { render } = instance;
+      if (!instance.isMounted) {
+        // mount component process
+        const subTree = (instance.subTree = normalizeVNode(render()));
+        patch(null, subTree, container);
+        initialVNode.el = subTree.el;
+        instance.isMounted = true;
+      } else {
+        // patch component process
+        let { next, vnode } = instance;
+        if (next) {
+          next.el = vnode.el;
+          next.component = instance;
+          instance.vnode = next;
+          instance.next = null;
+          updateProps(instance, next.props);
+        } else {
+          next = vnode;
+        }
+        const prevTree = instance.subTree;
+        const nextTree = normalizeVNode(render());
+        instance.subTree = nextTree;
+        patch(prevTree, nextTree, hostParentNode(prevTree.el!)!);
+        next.el = nextTree.el;
+      }
+    };
+    const effect = (instance.effect = new ReactiveEffect(componentUpdateFn));
+    const update = (instance.update = () => effect.run());
+    update();
+  };
+
+  const updateComponent = (n1: VNode, n2: VNode) => {
+    const instance = (n2.component = n1.component)!;
+    instance.next = n2;
+    instance.update();
   };
 
   const processElement = (
@@ -115,17 +197,8 @@ export function createRenderer(options: RendererOptions) {
   };
 
   const render: RootRenderFunction = (rootComponent, container) => {
-    const componentRender = rootComponent.setup!();
-    let n1: VNode | null = null;
-    const updateComponent = () => {
-      const n2 = componentRender();
-      patch(n1, n2, container);
-      n1 = n2;
-    };
-
-    const effect = new ReactiveEffect(updateComponent);
-
-    effect.run();
+    const vnode = createVNode(rootComponent, {}, []);
+    patch(null, vnode, container);
   };
 
   return { render };
