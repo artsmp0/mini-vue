@@ -1,8 +1,8 @@
 import { RendererOptions } from "../runtime-core/renderer";
 
 export const nodeOps: Omit<RendererOptions<Node>, "patchProp"> = {
-  setElementText(node, text) {
-    node.textContent = text;
+  setText: (node, text) => {
+    node.nodeValue = text;
   },
   createElement(type) {
     return document.createElement(type);
