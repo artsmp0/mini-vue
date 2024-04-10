@@ -1,9 +1,12 @@
 import { generate } from "./codegen";
+import { CompilerOptions } from "./options";
 import { baseParse } from "./parse";
 
-export function baseCompile(template: string) {
+export function baseCompile(
+  template: string,
+  options: Required<CompilerOptions>
+) {
   const parseResult = baseParse(template.trim());
-  console.log("parseResult: ", parseResult);
-  const code = generate(parseResult);
+  const code = generate(parseResult, options);
   return code;
 }
