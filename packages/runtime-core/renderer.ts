@@ -81,7 +81,9 @@ export function createRenderer(options: RendererOptions) {
       const { render } = instance;
       if (!instance.isMounted) {
         // mount component process
-        const subTree = (instance.subTree = normalizeVNode(render()));
+        const subTree = (instance.subTree = normalizeVNode(
+          render(instance.setupData)
+        ));
         patch(null, subTree, container);
         initialVNode.el = subTree.el;
         instance.isMounted = true;
@@ -98,7 +100,7 @@ export function createRenderer(options: RendererOptions) {
           next = vnode;
         }
         const prevTree = instance.subTree;
-        const nextTree = normalizeVNode(render());
+        const nextTree = normalizeVNode(render(instance.setupData));
         instance.subTree = nextTree;
         patch(prevTree, nextTree, hostParentNode(prevTree.el!)!);
         next.el = nextTree.el;
