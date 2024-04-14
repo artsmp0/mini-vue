@@ -18,7 +18,7 @@ export interface ComponentInternalInstance {
   propsOptions: Props;
   props: Data;
   emit: (event: string, ...args: any[]) => void;
-  setupData: Data; // 如果 setup 的返回结果是对象，则存储在这里
+  setupState: Data; // 如果 setup 的返回结果是对象，则存储在这里
 }
 
 export interface InternalRenderFunction {
@@ -43,7 +43,7 @@ export function createComponentInstance(
     propsOptions: type.props || {},
     props: {},
     emit: null!,
-    setupData: null!,
+    setupState: null!,
   };
   instance.emit = emit.bind(null, instance);
   return instance;
@@ -67,7 +67,7 @@ export function setupComponent(instance: ComponentInternalInstance) {
     if (typeof setupResult === "function") {
       instance.render = setupResult;
     } else if (typeof setupResult === "object") {
-      instance.setupData = setupResult;
+      instance.setupState = setupResult;
     }
   }
 

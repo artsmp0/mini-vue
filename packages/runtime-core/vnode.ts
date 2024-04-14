@@ -7,8 +7,9 @@ export interface VNode<HostNode = RendererNode> {
   type: VnodeTypes;
   props: VnodeProps | null;
   children: unknown;
-  el?: HostNode;
+  el: HostNode | undefined;
   component?: ComponentInternalInstance | null;
+  key: string | number | symbol | null;
 }
 export interface VnodeProps {
   [key: string]: any;
@@ -26,7 +27,14 @@ export function createVNode(
   props: VnodeProps | null,
   children: unknown
 ) {
-  const vnode: VNode = { type, props, children };
+  const vnode: VNode = {
+    type,
+    props,
+    children,
+    key: props?.key ?? null,
+    component: null,
+    el: undefined,
+  };
   return vnode;
 }
 
@@ -37,4 +45,8 @@ export function normalizeVNode(child: VNodeChild): VNode {
     // 在 child 是 string 类型的情况下转换为刚才介绍的那种形式
     return createVNode(Text, null, String(child));
   }
+}
+
+export function isSameVNodeType(n1: VNode, n2: VNode): boolean {
+  return n1.type === n2.type && n1.key === n2.key;
 }

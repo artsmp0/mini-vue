@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>最长递增子序列</title>
+  </head>
+  <body>
+    <script>
+      function getSequence(arr) {
+        if (arr.length === 0) return [];
+        const result = [[arr[0]]];
+
+        for (let i = 1; i < arr.length; i++) {
+          const n = arr[i];
+          for (let j = result.length - 1; j >= 0; j--) {
+            const line = result[j];
+            const tail = line[line.length - 1];
+            if (n > tail) {
+              result[j + 1] = [...line, n];
+              break;
+            } else if (n < tail && j === 0) {
+              result[j] = [n];
+            }
+          }
+        }
+        return result[result.length - 1];
+      }
+
+      function getSequence2(arr) {
+        const p = arr.slice();
+        const result = [0];
+        let i, j, u, v, c;
+        const len = arr.length;
+        for (i = 0; i < len; i++) {
+          const arrI = arr[i];
+          if (arrI !== 0) {
+            j = result[result.length - 1];
+            if (arr[j] < arrI) {
+              p[i] = j;
+              result.push(i);
+              continue;
+            }
+            u = 0;
+            v = result.length - 1;
+            while (u < v) {
+              c = (u + v) >> 1;
+              if (arr[result[c]] < arrI) {
+                u = c + 1;
+              } else {
+                v = c;
+              }
+            }
+            if (arrI < arr[result[u]]) {
+              if (u > 0) {
+                p[i] = result[u - 1];
+              }
+              result[u] = i;
+            }
+          }
+        }
+        u = result.length;
+        v = result[u - 1];
+        while (u-- > 0) {
+          result[u] = v;
+          v = p[v];
+        }
+        return result;
+      }
+
+      console.log(getSequence([2, 5, 3, 7, 11, 8, 10, 13, 6]));
+      console.log(getSequence2([2, 5, 3, 7, 11, 8, 10, 13, 6]));
+    </script>
+  </body>
+</html>
