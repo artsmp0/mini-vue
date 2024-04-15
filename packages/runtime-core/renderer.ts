@@ -1,4 +1,5 @@
 import { ReactiveEffect } from "../reactivity";
+import { ShapeFlags } from "../shared";
 import {
   Component,
   ComponentInternalInstance,
@@ -52,6 +53,7 @@ export function createRenderer(options: RendererOptions) {
     createElement: hostCreateElement,
     createText: hostCreateText,
     setText: hostSetText,
+    setElementText: hostSetElementText,
     insert: hostInsert,
     remove: hostRemove,
     parentNode: hostParentNode,
@@ -63,12 +65,12 @@ export function createRenderer(options: RendererOptions) {
     container: RendererElement,
     anchor: RendererElement | null
   ) => {
-    const { type } = n2;
+    const { type, shapeFlag } = n2;
     if (type === Text) {
       processText(n1, n2, container, anchor);
-    } else if (typeof type === "string") {
+    } else if (shapeFlag & ShapeFlags.ELEMENT) {
       processElement(n1, n2, container, anchor);
-    } else if (typeof type === "object") {
+    } else if (shapeFlag & ShapeFlags.COMPONENT) {
       processComponent(n1, n2, container, anchor);
     } else {
       // do nothing
@@ -143,9 +145,33 @@ export function createRenderer(options: RendererOptions) {
     container: RendererElement,
     anchor: RendererElement | null
   ) => {
-    const c1 = n1.children as VNode[];
-    const c2 = n2.children as VNode[];
-    patchKeyedChildren(c1, c2, container, anchor);
+    const c1 = n1 && n1.children;
+    const prevShapeFlag = n1 ? n1.shapeFlag : 0;
+    const c2 = n2.children;
+    const { shapeFlag } = n2;
+    if (shapeFlag & ShapeFlags.TEXT_CHILDREN) {
+      if (prevShapeFlag & ShapeFlags.ARRAY_CHILDREN) {
+        unmountChildren(c1 as VNode[]);
+      }
+      if (c2 !== c1) {
+        hostSetElementText(container, c2 as string);
+      }
+    } else {
+      if (prevShapeFlag & ShapeFlags.ARRAY_CHILDREN) {
+        if (shapeFlag & ShapeFlags.ARRAY_CHILDREN) {
+          patchKeyedChildren(c1 as VNode[], c2 as VNode[], container, anchor);
+        } else {
+          unmountChildren(c1 as VNode[]);
+        }
+      } else {
+        if (prevShapeFlag & ShapeFlags.TEXT_CHILDREN) {
+          hostSetElementText(container, "");
+        }
+        if (shapeFlag & ShapeFlags.ARRAY_CHILDREN) {
+          mountChildren(c2 as VNode[], container, anchor);
+        }
+      }
+    }
   };
 
   const patchKeyedChildren = (
@@ -254,8 +280,8 @@ export function createRenderer(options: RendererOptions) {
     container: RendererElement,
     anchor: RendererElement | null
   ) => {
-    const { el, type } = vnode;
-    if (typeof type === "object") {
+    const { el, shapeFlag } = vnode;
+    if (shapeFlag & ShapeFlags.COMPONENT) {
       move(vnode.component!.subTree, container, anchor);
       return;
     }
@@ -263,8 +289,8 @@ export function createRenderer(options: RendererOptions) {
   };
 
   const unmount = (vnode: VNode) => {
-    const { type, children } = vnode;
-    if (typeof type === "object") {
+    const { shapeFlag, children } = vnode;
+    if (shapeFlag & ShapeFlags.COMPONENT) {
       unmountComponent(vnode.component!);
     } else if (Array.isArray(children)) {
       unmountChildren(children as VNode[]);
