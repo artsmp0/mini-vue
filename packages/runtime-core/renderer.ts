@@ -168,7 +168,9 @@ export function createRenderer(options: RendererOptions) {
     }
 
     let j;
+    // 当前已补丁个数
     let patched = 0;
+    // 最大需要补丁数量
     const toBePatched = e2 + 1;
     let moved = false;
     let maxNewIndexSoFar = 0;
@@ -176,9 +178,11 @@ export function createRenderer(options: RendererOptions) {
     const newIndexToOldIndexMap = new Array(toBePatched);
     for (i = 0; i < toBePatched; i++) newIndexToOldIndexMap[i] = 0;
 
+    // 循环旧 vnode[]，缔造新旧节点数组的下标映射关系。
     for (i = 0; i <= e1; i++) {
       const prevChild = c1[i];
       if (patched >= toBePatched) {
+        // 超出这个最大补丁数，表示直接卸载
         // all new children have been patched so this can only be a removal
         unmount(prevChild);
         continue;
@@ -199,12 +203,16 @@ export function createRenderer(options: RendererOptions) {
         }
       }
       if (newIndex === undefined) {
+        // 在新的 vnode[] 中找不到，说明该节点需要卸载
         unmount(prevChild);
       } else {
+        // 找到了，进行新旧节点的映射
         newIndexToOldIndexMap[newIndex] = i + 1;
         if (newIndex >= maxNewIndexSoFar) {
+          // 表示是递增顺序，不需要移动
           maxNewIndexSoFar = newIndex;
         } else {
+          // 非递增，说明有需要移动的元素
           moved = true;
         }
         patch(prevChild, c2[newIndex] as VNode, container, null);
@@ -215,13 +223,16 @@ export function createRenderer(options: RendererOptions) {
     const increasingNewIndexSequence = moved
       ? getSequence(newIndexToOldIndexMap)
       : [];
+    // j 指向最长递增子序列的最后一个元素
     j = increasingNewIndexSequence.length - 1;
+    // i 指向新节点数组中的最后一个元素，从后往前移动
     for (i = toBePatched - 1; i >= 0; i--) {
       const nextIndex = i;
       const nextChild = c2[nextIndex] as VNode;
       const anchor =
         nextIndex + 1 < l2 ? (c2[nextIndex + 1] as VNode).el! : parentAnchor;
       if (newIndexToOldIndexMap[i] === 0) {
+        // 未在旧的 vnode[] 中找到对应节点，则挂载
         // mount new
         patch(null, nextChild, container, anchor);
       } else if (moved) {
@@ -229,6 +240,7 @@ export function createRenderer(options: RendererOptions) {
         // There is no stable subsequence (e.g. a reverse)
         // OR current node is not among the stable sequence
         if (j < 0 || i !== increasingNewIndexSequence[j]) {
+          // 最长递增子序列所指向的节点即为不需要移动的节点
           move(nextChild, container, anchor);
         } else {
           j--;
