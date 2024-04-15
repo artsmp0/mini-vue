@@ -7,6 +7,7 @@ import { VNode, VNodeChild } from "./vnode";
 export type Component = ComponentOptions;
 
 export interface ComponentInternalInstance {
+  uid: number;
   type: Component;
   vnode: VNode;
   subTree: VNode; // 原 n1
@@ -26,12 +27,13 @@ export interface InternalRenderFunction {
 }
 
 export type Data = Record<string, unknown>;
-
+let uid = 0;
 export function createComponentInstance(
   vnode: VNode
 ): ComponentInternalInstance {
   const type = vnode.type as Component;
   const instance: ComponentInternalInstance = {
+    uid: uid++,
     type,
     vnode,
     next: null!,

@@ -5,8 +5,13 @@ export let activeEffect: ReactiveEffect | undefined;
 type KeyToDepMap = Map<any, Dep>;
 const targetMap = new WeakMap<object, KeyToDepMap>();
 
+export type EffectSchedular = (...args: any[]) => any;
+
 export class ReactiveEffect<T = any> {
-  constructor(public fn: () => T) {}
+  constructor(
+    public fn: () => T,
+    public schedular: EffectSchedular | null = null
+  ) {}
 
   run() {
     let parent: ReactiveEffect | undefined = activeEffect;
@@ -42,7 +47,11 @@ export function trigger(target: object, key?: unknown) {
   if (dep) {
     const effects = [...dep];
     for (const effect of effects) {
-      effect.run();
+      if (effect.schedular) {
+        effect.schedular();
+      } else {
+        effect.run();
+      }
     }
   }
 }

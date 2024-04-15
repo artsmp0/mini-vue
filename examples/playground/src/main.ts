@@ -1,23 +1,26 @@
-import { createApp, reactive, h } from "mini-vue";
+import { createApp, reactive, h, nextTick } from "mini-vue";
 
 const app = createApp({
   setup() {
     const state = reactive({
-      list: [{ key: "a" }, { key: "b" }, { key: "c" }, { key: "d" }],
+      count: 0,
     });
-    const updateList = () => {
-      state.list = [{ key: "a" }, { key: "b" }, { key: "d" }, { key: "c" }];
+    const updateState = async () => {
+      state.count++;
+
+      await nextTick(); // 等待
+      const p = document.getElementById("count-p");
+      if (p) {
+        console.log("😎 p.textContent", p.textContent);
+      }
     };
 
-    return () =>
-      h("div", { id: "app" }, [
-        h(
-          "ul",
-          {},
-          state.list.map((item) => h("li", { key: item.key }, [item.key]))
-        ),
-        h("button", { onClick: updateList }, ["update"]),
+    return () => {
+      return h("div", { id: "app" }, [
+        h("p", { id: "count-p" }, [`${state.count}`]),
+        h("button", { onClick: updateState }, ["update"]),
       ]);
+    };
   },
 });
 

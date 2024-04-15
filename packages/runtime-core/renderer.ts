@@ -7,6 +7,7 @@ import {
   setupComponent,
 } from "./component";
 import { updateProps } from "./componentProps";
+import { SchedulerJob, queueJob } from "./schedular";
 import {
   Text,
   VNode,
@@ -393,8 +394,12 @@ export function createRenderer(options: RendererOptions) {
       }
     };
 
-    const effect = (instance.effect = new ReactiveEffect(componentUpdateFn));
-    const update = (instance.update = () => effect.run());
+    const effect = (instance.effect = new ReactiveEffect(
+      componentUpdateFn,
+      () => queueJob(update)
+    ));
+    const update: SchedulerJob = (instance.update = () => effect.run());
+    update.id = instance.uid;
     update();
   };
 
