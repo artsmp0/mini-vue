@@ -1,13 +1,32 @@
-import { createApp, h, ref } from "mini-vue";
+import { createApp, h, shallowRef } from "mini-vue";
 
 const app = createApp({
   setup() {
-    const count = ref(0);
+    const state = shallowRef({ count: 0 });
 
     return () =>
       h("div", {}, [
-        h("p", {}, [`count: ${count.value}`]),
-        h("button", { onClick: () => count.value++ }, ["Increment"]),
+        h("p", {}, [`count: ${state.value.count}`]),
+
+        h(
+          "button",
+          {
+            onClick: () => {
+              state.value = { count: state.value.count + 1 };
+            },
+          },
+          ["increment"]
+        ),
+
+        h(
+          "button", // Clicking does not trigger re-rendering
+          {
+            onClick: () => {
+              state.value.count++;
+            },
+          },
+          ["not trigger ..."]
+        ),
       ]);
   },
 });
