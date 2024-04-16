@@ -1,3 +1,4 @@
+import { isArray } from "../shared";
 import { Dep, createDep } from "./dep";
 
 export let activeEffect: ReactiveEffect | undefined;
@@ -53,5 +54,26 @@ export function trigger(target: object, key?: unknown) {
         effect.run();
       }
     }
+  }
+}
+
+export function trackEffects(dep: Dep) {
+  if (activeEffect) {
+    dep.add(activeEffect);
+  }
+}
+
+export function triggerEffects(dep: Dep | ReactiveEffect[]) {
+  const effects = isArray(dep) ? dep : [...dep];
+  for (const effect of effects) {
+    triggerEffect(effect);
+  }
+}
+
+function triggerEffect(effect: ReactiveEffect) {
+  if (effect.schedular) {
+    effect.schedular();
+  } else {
+    effect.run();
   }
 }
