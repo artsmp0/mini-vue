@@ -1,8 +1,10 @@
-import { createApp, h, shallowRef } from "mini-vue";
-
+import { createApp, h, shallowRef, triggerRef } from "mini-vue";
 const app = createApp({
   setup() {
     const state = shallowRef({ count: 0 });
+    const forceUpdate = () => {
+      triggerRef(state);
+    };
 
     return () =>
       h("div", {}, [
@@ -26,6 +28,12 @@ const app = createApp({
             },
           },
           ["not trigger ..."]
+        ),
+
+        h(
+          "button", // The rendering is updated to the value currently held by state.value.count
+          { onClick: forceUpdate },
+          ["force update !"]
         ),
       ]);
   },
